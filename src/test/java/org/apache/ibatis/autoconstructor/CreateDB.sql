@@ -14,6 +14,7 @@
 --    limitations under the License.
 --
 
+-- CreateDB.sql 文件，用于单元测试里，初始化数据库的数据
 DROP TABLE subject
 IF EXISTS;
 
