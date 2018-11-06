@@ -110,6 +110,8 @@ public class Reflector {
   private void addDefaultConstructor(Class<?> clazz) {
     Constructor<?>[] consts = clazz.getDeclaredConstructors();
     for (Constructor<?> constructor : consts) {
+      // 判断无参的构造方法
+      // 原来有判断这里constructor是否私有，但是在Jdk9中会出现Illegal reflective access的警告，移除了
       if (constructor.getParameterTypes().length == 0) {
           this.defaultConstructor = constructor;
       }
@@ -117,13 +119,16 @@ public class Reflector {
   }
 
   private void addGetMethods(Class<?> cls) {
+    // 之所以会是List<Method> 因为父类之类可能会有相同命名的方法
     Map<String, List<Method>> conflictingGetters = new HashMap<>();
     Method[] methods = getClassMethods(cls);
     for (Method method : methods) {
+      // 参数大于 0 ，说明不是 getting 方法，忽略
       if (method.getParameterTypes().length > 0) {
         continue;
       }
       String name = method.getName();
+      // 根据常用的pojo规范，对于非布尔值，采用get开头，对于布尔值，采用is开头
       if ((name.startsWith("get") && name.length() > 3)
           || (name.startsWith("is") && name.length() > 2)) {
         name = PropertyNamer.methodToProperty(name);
@@ -133,6 +138,11 @@ public class Reflector {
     resolveGetterConflicts(conflictingGetters);
   }
 
+  /**
+   * 父类子类存在相同方法相同类型已被getClassMethods->addUniqueMethods合并
+   * 存在多个同名方法的情况，只剩返回方法同名，参数一致，但是返回类型不同的情况，进行处理
+   * @param conflictingGetters
+   */
   private void resolveGetterConflicts(Map<String, List<Method>> conflictingGetters) {
     for (Entry<String, List<Method>> entry : conflictingGetters.entrySet()) {
       Method winner = null;
@@ -144,6 +154,8 @@ public class Reflector {
         }
         Class<?> winnerType = winner.getReturnType();
         Class<?> candidateType = candidate.getReturnType();
+        // 基于返回类型比较
+        // 类型相同
         if (candidateType.equals(winnerType)) {
           if (!boolean.class.equals(candidateType)) {
             throw new ReflectionException(
@@ -153,8 +165,11 @@ public class Reflector {
           } else if (candidate.getName().startsWith("is")) {
             winner = candidate;
           }
+        // 不符合选择子类
         } else if (candidateType.isAssignableFrom(winnerType)) {
-          // OK getter type is descendant
+        // OK getter type is descendant
+        // 符合选择子类。因为子类可以修改放大返回值。例如，父类的一个方法的返回值为 List ，子类对该方法的返回值可以覆写为 ArrayList 。
+        // A.class.isAssignableFrom(B.class) A是否是B的父类
         } else if (winnerType.isAssignableFrom(candidateType)) {
           winner = candidate;
         } else {
@@ -176,6 +191,11 @@ public class Reflector {
     }
   }
 
+  /**
+   * 类似 org.apache.ibatis.reflection.Reflector#addGetMethods(java.lang.Class)
+   * @see Reflector#addGetMethods(java.lang.Class)
+   * @param cls
+   */
   private void addSetMethods(Class<?> cls) {
     Map<String, List<Method>> conflictingSetters = new HashMap<>();
     Method[] methods = getClassMethods(cls);
@@ -314,11 +334,11 @@ public class Reflector {
   }
 
   /**
+   * 递归往上，获取所有方法
    * This method returns an array containing all methods
    * declared in this class and any superclass.
    * We use this method, instead of the simpler Class.getMethods(),
    * because we want to look for private methods as well.
-   *
    * @param cls The class
    * @return An array containing all methods in this class
    */
@@ -327,29 +347,33 @@ public class Reflector {
     Class<?> currentClass = cls;
     while (currentClass != null && currentClass != Object.class) {
       addUniqueMethods(uniqueMethods, currentClass.getDeclaredMethods());
-
       // we also need to look for interface methods -
       // because the class may be abstract
       Class<?>[] interfaces = currentClass.getInterfaces();
       for (Class<?> anInterface : interfaces) {
         addUniqueMethods(uniqueMethods, anInterface.getMethods());
       }
-
       currentClass = currentClass.getSuperclass();
     }
-
     Collection<Method> methods = uniqueMethods.values();
-
     return methods.toArray(new Method[methods.size()]);
   }
 
+  /**
+   * 方法去除交接方法，添加到uniqueMethods中
+   * @param uniqueMethods
+   * @param methods
+   */
   private void addUniqueMethods(Map<String, Method> uniqueMethods, Method[] methods) {
     for (Method currentMethod : methods) {
+      // 桥接方法，实际上就是Java编译器在类型擦除时的副产物，接口定义中带泛型时实际上是Object类型，实现该接口时编译器会生成一个桥接方法（参数是Object类型）
+      // 反射时会获取到这个方法
       if (!currentMethod.isBridge()) {
         String signature = getSignature(currentMethod);
         // check to see if the method is already known
         // if it is known, then an extended class must have
         // overridden a method
+        // 这里实际上从子类递归往上，所以子类覆写方法优先
         if (!uniqueMethods.containsKey(signature)) {
           uniqueMethods.put(signature, currentMethod);
         }
@@ -357,6 +381,11 @@ public class Reflector {
     }
   }
 
+  /**
+   * 获取方法签名，returnType#方法名:参数名1,参数名2,参数名3，重点是带有返回类型
+   * @param method
+   * @return
+   */
   private String getSignature(Method method) {
     StringBuilder sb = new StringBuilder();
     Class<?> returnType = method.getReturnType();
@@ -378,7 +407,6 @@ public class Reflector {
 
   /**
    * Checks whether can control member accessible.
-   *
    * @return If can control member accessible, it return {@literal true}
    * @since 3.5.0
    */
