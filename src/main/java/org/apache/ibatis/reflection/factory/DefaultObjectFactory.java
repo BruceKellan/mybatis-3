@@ -51,15 +51,20 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
     return (T) instantiateClass(classToCreate, constructorArgTypes, constructorArgs);
   }
 
+  /**
+   * 目前是个空实现
+   * @param properties configuration properties
+   */
   @Override
   public void setProperties(Properties properties) {
     // no props for default
   }
 
-  private  <T> T instantiateClass(Class<T> type, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
+  private <T> T instantiateClass(Class<T> type, List<Class<?>> constructorArgTypes, List<Object> constructorArgs) {
     try {
       Constructor<T> constructor;
       if (constructorArgTypes == null || constructorArgs == null) {
+        // 空时，通过无参构造方法，创建指定类的对象
         constructor = type.getDeclaredConstructor();
         try {
           return constructor.newInstance();
@@ -72,6 +77,7 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
           }
         }
       }
+      // 使用特定构造方法，创建指定类的对象
       constructor = type.getDeclaredConstructor(constructorArgTypes.toArray(new Class[constructorArgTypes.size()]));
       try {
         return constructor.newInstance(constructorArgs.toArray(new Object[constructorArgs.size()]));
@@ -90,7 +96,8 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
           argTypes.append(argType.getSimpleName());
           argTypes.append(",");
         }
-        argTypes.deleteCharAt(argTypes.length() - 1); // remove trailing ,
+        // remove trailing
+        argTypes.deleteCharAt(argTypes.length() - 1);
       }
       StringBuilder argValues = new StringBuilder();
       if (constructorArgs != null && !constructorArgs.isEmpty()) {
@@ -98,7 +105,8 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
           argValues.append(String.valueOf(argValue));
           argValues.append(",");
         }
-        argValues.deleteCharAt(argValues.length() - 1); // remove trailing ,
+        // remove trailing ,
+        argValues.deleteCharAt(argValues.length() - 1);
       }
       throw new ReflectionException("Error instantiating " + type + " with invalid types (" + argTypes + ") or values (" + argValues + "). Cause: " + e, e);
     }

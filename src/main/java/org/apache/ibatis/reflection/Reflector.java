@@ -292,9 +292,14 @@ public class Reflector {
     return result;
   }
 
+  /**
+   * 初始化 getMethods + getTypes 和 setMethods + setTypes
+   * @param clazz
+   */
   private void addFields(Class<?> clazz) {
     Field[] fields = clazz.getDeclaredFields();
     for (Field field : fields) {
+      //
       if (!setMethods.containsKey(field.getName())) {
         // issue #379 - removed the check for final because JDK 1.5 allows
         // modification of final fields through reflection (JSR-133). (JGB)

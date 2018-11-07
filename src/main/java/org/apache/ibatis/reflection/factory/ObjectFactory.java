@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.Properties;
 
 /**
+ * 对象工厂
  * MyBatis uses an ObjectFactory to create all needed new Objects.
- * 
  * @author Clinton Begin
  */
 public interface ObjectFactory {
@@ -39,6 +39,7 @@ public interface ObjectFactory {
   <T> T create(Class<T> type);
 
   /**
+   * 指定特定的构造器和参数
    * Creates a new object with the specified constructor and params.
    * @param type Object type
    * @param constructorArgTypes Constructor argument types

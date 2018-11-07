@@ -35,6 +35,7 @@ public class SetFieldInvoker implements Invoker {
     try {
       field.set(target, args[0]);
     } catch (IllegalAccessException e) {
+      // 如果私有调用失败，采用反射设置为可调用，重新调用
       if (Reflector.canControlMemberAccessible()) {
         field.setAccessible(true);
         field.set(target, args[0]);
