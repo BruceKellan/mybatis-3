@@ -233,7 +233,7 @@ public class Reflector {
           try {
             match = pickBetterSetter(match, setter, propName);
           } catch (ReflectionException e) {
-            // there could still be the 'best match'
+            // there could still be the 'best match'PropertyCopier
             match = null;
             exception = e;
           }
@@ -522,7 +522,6 @@ public class Reflector {
 
   /**
    * Check to see if a class has a readable property by name
-   *
    * @param propertyName - the name of the property to check
    * @return True if the object has a readable property by the name
    */
@@ -530,6 +529,11 @@ public class Reflector {
     return getMethods.keySet().contains(propertyName);
   }
 
+  /**
+   * caseInsensitivePropertyMap 存储不区分大小写的属性
+   * @param name
+   * @return
+   */
   public String findPropertyName(String name) {
     return caseInsensitivePropertyMap.get(name.toUpperCase(Locale.ENGLISH));
   }

@@ -32,8 +32,12 @@ import org.apache.ibatis.reflection.property.PropertyTokenizer;
 public class MetaClass {
 
   private final ReflectorFactory reflectorFactory;
+
   private final Reflector reflector;
 
+  /**
+   * private !!
+   */
   private MetaClass(Class<?> type, ReflectorFactory reflectorFactory) {
     this.reflectorFactory = reflectorFactory;
     this.reflector = reflectorFactory.findForClass(type);
@@ -94,7 +98,9 @@ public class MetaClass {
   }
 
   private Class<?> getGetterType(PropertyTokenizer prop) {
+    // 获得返回类型
     Class<?> type = reflector.getGetterType(prop.getName());
+    // 如果获取数组的某个位置的元素，则获取其泛型。例如说：list[0].field ，那么就会解析 list 是什么类型，这样才好通过该类型，继续获得 field
     if (prop.getIndex() != null && Collection.class.isAssignableFrom(type)) {
       Type returnType = getGenericGetterType(prop.getName());
       if (returnType instanceof ParameterizedType) {
@@ -115,11 +121,13 @@ public class MetaClass {
   private Type getGenericGetterType(String propertyName) {
     try {
       Invoker invoker = reflector.getGetInvoker(propertyName);
+      // 如果 MethodInvoker 对象，则说明是 getting 方法，解析方法返回类型
       if (invoker instanceof MethodInvoker) {
         Field _method = MethodInvoker.class.getDeclaredField("method");
         _method.setAccessible(true);
         Method method = (Method) _method.get(invoker);
         return TypeParameterResolver.resolveReturnType(method, reflector.getType());
+      // 如果 GetFieldInvoker 对象，则说明是 field ，直接访问
       } else if (invoker instanceof GetFieldInvoker) {
         Field _field = GetFieldInvoker.class.getDeclaredField("field");
         _field.setAccessible(true);
@@ -146,10 +154,13 @@ public class MetaClass {
   }
 
   public boolean hasGetter(String name) {
+    // 创建 PropertyTokenizer 对象，对 name 进行分词
     PropertyTokenizer prop = new PropertyTokenizer(name);
+    // 有子表达式
     if (prop.hasNext()) {
       if (reflector.hasGetter(prop.getName())) {
         MetaClass metaProp = metaClassForProperty(prop);
+        // 递归判断子表达式 children ，是否有 getting 方法
         return metaProp.hasGetter(prop.getChildren());
       } else {
         return false;
