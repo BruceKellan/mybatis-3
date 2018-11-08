@@ -32,6 +32,7 @@ import javax.sql.DataSource;
 import org.apache.ibatis.io.Resources;
 
 /**
+ * 非池化的 DataSource 实现类
  * @author Clinton Begin
  * @author Eduardo Macarron
  */
@@ -39,6 +40,12 @@ public class UnpooledDataSource implements DataSource {
   
   private ClassLoader driverClassLoader;
   private Properties driverProperties;
+
+  /**
+   * 已注册的 Driver 映射
+   * KEY：Driver 类名
+   * VALUE：Driver 对象
+   */
   private static Map<String, Driver> registeredDrivers = new ConcurrentHashMap<>();
 
   private String driver;
@@ -46,10 +53,18 @@ public class UnpooledDataSource implements DataSource {
   private String username;
   private String password;
 
+  /**
+   * 自动提交
+   */
   private Boolean autoCommit;
+
+  /**
+   * 默认隔离级别
+   */
   private Integer defaultTransactionIsolationLevel;
 
   static {
+    // 初始化 registeredDrivers，在高版本的JDBC中使用SPI
     Enumeration<Driver> drivers = DriverManager.getDrivers();
     while (drivers.hasMoreElements()) {
       Driver driver = drivers.nextElement();
@@ -182,6 +197,13 @@ public class UnpooledDataSource implements DataSource {
     this.defaultTransactionIsolationLevel = defaultTransactionIsolationLevel;
   }
 
+  /**
+   * getConnection时才去获取对应的配置参数
+   * @param username
+   * @param password
+   * @return
+   * @throws SQLException
+   */
   private Connection doGetConnection(String username, String password) throws SQLException {
     Properties props = new Properties();
     if (driverProperties != null) {
@@ -203,7 +225,12 @@ public class UnpooledDataSource implements DataSource {
     return connection;
   }
 
+  /**
+   * synchronized 粒度有点大。。。，获取Connection，是一个并发的操作
+   * @throws SQLException
+   */
   private synchronized void initializeDriver() throws SQLException {
+    // 没有获取到Drivers时，才去手动注册Driver
     if (!registeredDrivers.containsKey(driver)) {
       Class<?> driverType;
       try {

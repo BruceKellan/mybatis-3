@@ -41,20 +41,58 @@ public class PooledDataSource implements DataSource {
 
   private static final Log log = LogFactory.getLog(PooledDataSource.class);
 
+  /**
+   * PoolState 对象，记录池化的状态
+   */
   private final PoolState state = new PoolState(this);
 
   private final UnpooledDataSource dataSource;
 
   // OPTIONAL CONFIGURATION FIELDS
+  /**
+   * 在任意时间可以存在的活动（也就是正在使用）连接数量
+   */
   protected int poolMaximumActiveConnections = 10;
+
+  /**
+   * 任意时间可能存在的空闲连接数
+   */
   protected int poolMaximumIdleConnections = 5;
+
+  /**
+   * 在被强制返回之前，池中连接被检出（checked out）时间。单位：毫秒
+   */
   protected int poolMaximumCheckoutTime = 20000;
+
+  /**
+   * 这是一个底层设置，如果获取连接花费了相当长的时间，连接池会打印状态日志并重新尝试获取一个连接（避免在误配置的情况下一直安静的失败）。单位：毫秒
+   */
   protected int poolTimeToWait = 20000;
+
+  /**
+   * 这是一个关于坏连接容忍度的底层设置，作用于每一个尝试从缓存池获取连接的线程. 如果这个线程获取到的是一个坏的连接，那么这个数据源允许这个线程尝试重新获取一个新的连接，
+   * 但是这个重新尝试的次数不应该超过 poolMaximumIdleConnections 与 poolMaximumLocalBadConnectionTolerance 之和。
+   */
   protected int poolMaximumLocalBadConnectionTolerance = 3;
+
+  /**
+   * 发送到数据库的侦测查询，用来检验连接是否正常工作并准备接受请求。
+   */
   protected String poolPingQuery = "NO PING QUERY SET";
+
+  /**
+   * 是否启用侦测查询。若开启，需要设置 poolPingQuery 属性为一个可执行的 SQL 语句（最好是一个速度非常快的 SQL 语句）
+   */
   protected boolean poolPingEnabled;
+
+  /**
+   * 配置 poolPingQuery 的频率。可以被设置为和数据库连接超时时间一样，来避免不必要的侦测，默认值：0（即所有连接每一时刻都被侦测 — 当然仅当 poolPingEnabled 为 true 时适用）
+   */
   protected int poolPingConnectionsNotUsedFor;
 
+  /**
+   * 期望 Connection 的类型编码，通过 {@link #assembleConnectionTypeCode(String, String, String)} 计算。
+   */
   private int expectedConnectionTypeCode;
 
   public PooledDataSource() {
@@ -354,10 +392,13 @@ public class PooledDataSource implements DataSource {
           if (!conn.getRealConnection().getAutoCommit()) {
             conn.getRealConnection().rollback();
           }
+          // 创建 PooledConnection 对象，并添加到空闲的链接集合中
           PooledConnection newConn = new PooledConnection(conn.getRealConnection(), this);
           state.idleConnections.add(newConn);
           newConn.setCreatedTimestamp(conn.getCreatedTimestamp());
           newConn.setLastUsedTimestamp(conn.getLastUsedTimestamp());
+          // 设置原连接失效
+          // 为什么这里要创建新的 PooledConnection 对象呢？避免使用方还在使用 conn ，通过将它设置为失效，万一再次调用，会抛出异常
           conn.invalidate();
           if (log.isDebugEnabled()) {
             log.debug("Returned connection " + newConn.getRealHashCode() + " to pool.");
@@ -384,12 +425,17 @@ public class PooledDataSource implements DataSource {
   }
 
   private PooledConnection popConnection(String username, String password) throws SQLException {
+    // 标记，获取连接时，是否进行了等待
     boolean countedWait = false;
+    // 最终获取到的链接对象
     PooledConnection conn = null;
+    // 记录当前时间
     long t = System.currentTimeMillis();
+    // 记录当前方法获取到坏连接的次数
     int localBadConnectionCount = 0;
 
     while (conn == null) {
+      // 这是一个并发操作
       synchronized (state) {
         if (!state.idleConnections.isEmpty()) {
           // Pool has available connection
@@ -448,6 +494,7 @@ public class PooledDataSource implements DataSource {
                   log.debug("Waiting as long as " + poolTimeToWait + " milliseconds for connection.");
                 }
                 long wt = System.currentTimeMillis();
+                // 等待，直到超时，或 pingConnection 方法中归还连接时的唤醒
                 state.wait(poolTimeToWait);
                 state.accumulatedWaitTime += System.currentTimeMillis() - wt;
               } catch (InterruptedException e) {
@@ -567,6 +614,10 @@ public class PooledDataSource implements DataSource {
     return conn;
   }
 
+  /**
+   * 被回收时关闭所有连接
+   * @throws Throwable
+   */
   protected void finalize() throws Throwable {
     forceCloseAll();
     super.finalize();
