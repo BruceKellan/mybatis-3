@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.ibatis.reflection.ArrayUtil;
 
 /**
+ * 缓存键对象
  * @author Clinton Begin
  */
 public class CacheKey implements Cloneable, Serializable {
@@ -37,7 +38,9 @@ public class CacheKey implements Cloneable, Serializable {
   private int hashcode;
   private long checksum;
   private int count;
-  // 8/21/2017 - Sonarlint flags this as needing to be marked transient.  While true if content is not serializable, this is not always true and thus should not be marked transient.
+  /**
+   * 8/21/2017 - Sonarlint flags this as needing to be marked transient.  While true if content is not serializable, this is not always true and thus should not be marked transient.
+   */
   private List<Object> updateList;
 
   public CacheKey() {
@@ -57,14 +60,11 @@ public class CacheKey implements Cloneable, Serializable {
   }
 
   public void update(Object object) {
-    int baseHashCode = object == null ? 1 : ArrayUtil.hashCode(object); 
-
+    int baseHashCode = object == null ? 1 : ArrayUtil.hashCode(object);
     count++;
     checksum += baseHashCode;
     baseHashCode *= count;
-
     hashcode = multiplier * hashcode + baseHashCode;
-
     updateList.add(object);
   }
 
@@ -82,9 +82,7 @@ public class CacheKey implements Cloneable, Serializable {
     if (!(object instanceof CacheKey)) {
       return false;
     }
-
     final CacheKey cacheKey = (CacheKey) object;
-
     if (hashcode != cacheKey.hashcode) {
       return false;
     }
@@ -94,7 +92,6 @@ public class CacheKey implements Cloneable, Serializable {
     if (count != cacheKey.count) {
       return false;
     }
-
     for (int i = 0; i < updateList.size(); i++) {
       Object thisObject = updateList.get(i);
       Object thatObject = cacheKey.updateList.get(i);

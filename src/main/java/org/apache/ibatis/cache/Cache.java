@@ -18,14 +18,13 @@ package org.apache.ibatis.cache;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
+ * MyBatis 中自带的这两级缓存与 MyBatis 以及整个应用是运行在同一个 JVM 中的，共享同一块堆内存。
+ * 如果这两级缓存中的数据量较大， 则可能影响系统中其他功能的运行，所以当需要缓存大量数据时，优先考虑使用 Redis、Memcache 等缓存产品。
+ *
  * SPI for cache providers.
- * 
  * One instance of cache will be created for each namespace.
- * 
  * The cache implementation must have a constructor that receives the cache id as an String parameter.
- * 
  * MyBatis will pass the namespace as id to the constructor.
- * 
  * <pre>
  * public MyCache(final String id) {
  *  if (id == null) {
@@ -35,7 +34,6 @@ import java.util.concurrent.locks.ReadWriteLock;
  *  initialize();
  * }
  * </pre>
- *
  * @author Clinton Begin
  */
 
@@ -88,9 +86,7 @@ public interface Cache {
   
   /** 
    * Optional. As of 3.2.6 this method is no longer called by the core.
-   *  
    * Any locking needed by the cache must be provided internally by the cache provider.
-   * 
    * @return A ReadWriteLock 
    */
   ReadWriteLock getReadWriteLock();

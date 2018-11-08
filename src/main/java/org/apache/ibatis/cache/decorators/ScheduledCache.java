@@ -20,6 +20,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import org.apache.ibatis.cache.Cache;
 
 /**
+ * 支持定时清空容器
  * @author Clinton Begin
  */
 public class ScheduledCache implements Cache {

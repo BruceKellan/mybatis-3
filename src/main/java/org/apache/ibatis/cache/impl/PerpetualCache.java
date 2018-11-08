@@ -23,12 +23,16 @@ import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.cache.CacheException;
 
 /**
+ * 永不过期
  * @author Clinton Begin
  */
 public class PerpetualCache implements Cache {
 
   private final String id;
 
+  /**
+   * 缓存容器
+   */
   private Map<Object, Object> cache = new HashMap<>();
 
   public PerpetualCache(String id) {
@@ -81,7 +85,6 @@ public class PerpetualCache implements Cache {
     if (!(o instanceof Cache)) {
       return false;
     }
-
     Cache otherCache = (Cache) o;
     return getId().equals(otherCache.getId());
   }
