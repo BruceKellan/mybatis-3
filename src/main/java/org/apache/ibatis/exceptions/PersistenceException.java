@@ -16,6 +16,7 @@
 package org.apache.ibatis.exceptions;
 
 /**
+ * 持久化异常，Mybatis的自定义异常的父类
  * @author Clinton Begin
  */
 @SuppressWarnings("deprecation")
