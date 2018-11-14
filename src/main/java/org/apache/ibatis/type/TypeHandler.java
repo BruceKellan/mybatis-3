@@ -21,16 +21,47 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
+ * 类型转换处理器
  * @author Clinton Begin
  */
 public interface TypeHandler<T> {
 
+  /**
+   * 设置 PreparedStatement 的指定参数
+   * JDBC Type => Java Type
+   * @param ps
+   * @param i
+   * @param parameter
+   * @param jdbcType
+   * @throws SQLException
+   */
   void setParameter(PreparedStatement ps, int i, T parameter, JdbcType jdbcType) throws SQLException;
 
+  /**
+   * JDBC Type => Java Type
+   * @param rs
+   * @param columnName
+   * @return
+   * @throws SQLException
+   */
   T getResult(ResultSet rs, String columnName) throws SQLException;
 
+  /**
+   * JDBC Type => Java Type
+   * @param rs
+   * @param columnIndex
+   * @return
+   * @throws SQLException
+   */
   T getResult(ResultSet rs, int columnIndex) throws SQLException;
 
+  /**
+   * JDBC Type => Java Type
+   * @param cs
+   * @param columnIndex
+   * @return
+   * @throws SQLException
+   */
   T getResult(CallableStatement cs, int columnIndex) throws SQLException;
 
 }

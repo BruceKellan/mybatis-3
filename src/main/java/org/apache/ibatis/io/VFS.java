@@ -35,6 +35,9 @@ import org.apache.ibatis.logging.LogFactory;
 public abstract class VFS {
   private static final Log log = LogFactory.getLog(VFS.class);
 
+  /**
+   * Default VFS 默认的VFS
+   */
   /** The built-in implementations. */
   public static final Class<?>[] IMPLEMENTATIONS = { JBoss6VFS.class, DefaultVFS.class };
 
@@ -51,7 +54,6 @@ public abstract class VFS {
       List<Class<? extends VFS>> impls = new ArrayList<>();
       impls.addAll(USER_IMPLEMENTATIONS);
       impls.addAll(Arrays.asList((Class<? extends VFS>[]) IMPLEMENTATIONS));
-
       // Try each implementation class until a valid one is found
       VFS vfs = null;
       for (int i = 0; vfs == null || !vfs.isValid(); i++) {

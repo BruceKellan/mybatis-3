@@ -57,7 +57,7 @@ import org.apache.ibatis.logging.LogFactory;
  * @author Tim Fennell
  */
 public class ResolverUtil<T> {
-  /*
+  /**
    * An instance of Log to use for logging in this class.
    */
   private static final Log log = LogFactory.getLog(ResolverUtil.class);
@@ -174,12 +174,10 @@ public class ResolverUtil<T> {
     if (packageNames == null) {
       return this;
     }
-
     Test test = new IsA(parent);
     for (String pkg : packageNames) {
       find(test, pkg);
     }
-
     return this;
   }
 
@@ -215,7 +213,6 @@ public class ResolverUtil<T> {
    */
   public ResolverUtil<T> find(Test test, String packageName) {
     String path = getPackagePath(packageName);
-
     try {
       List<String> children = VFS.getInstance().list(path);
       for (String child : children) {
@@ -255,7 +252,6 @@ public class ResolverUtil<T> {
       if (log.isDebugEnabled()) {
         log.debug("Checking to see if class " + externalName + " matches criteria [" + test + "]");
       }
-
       Class<?> type = loader.loadClass(externalName);
       if (test.matches(type)) {
         matches.add((Class<T>) type);
