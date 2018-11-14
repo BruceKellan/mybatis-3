@@ -48,6 +48,7 @@ import org.apache.ibatis.io.ResolverUtil;
 import org.apache.ibatis.io.Resources;
 
 /**
+ * jdbcType -> javaType 注册中心
  * @author Clinton Begin
  * @author Kazuki Shimizu
  */
