@@ -271,15 +271,56 @@ public class MapperMethod {
 
   public static class MethodSignature {
 
+    /**
+     * 返回类型是否为集合
+     */
     private final boolean returnsMany;
+
+    /**
+     * 返回类型是否为 Map
+     */
     private final boolean returnsMap;
+
+    /**
+     * 返回类型是否为 void
+     */
     private final boolean returnsVoid;
+
+    /**
+     * 返回类型是否为 {@link org.apache.ibatis.cursor.Cursor}
+     */
     private final boolean returnsCursor;
+
+    /**
+     * 返回类型是否为 {@link java.util.Optional}
+     */
     private final boolean returnsOptional;
+
+    /**
+     * 返回类型
+     */
     private final Class<?> returnType;
+
+    /**
+     * 返回方法上的 {@link MapKey#value()} ，前提是返回类型为 Map
+     */
     private final String mapKey;
+
+    /**
+     * 获得 {@link ResultHandler} 在方法参数中的位置。
+     * 如果为 null ，说明不存在这个类型
+     */
     private final Integer resultHandlerIndex;
+
+    /**
+     * 获得 {@link RowBounds} 在方法参数中的位置。
+     * 如果为 null ，说明不存在这个类型
+     */
     private final Integer rowBoundsIndex;
+
+    /**
+     * ParamNameResolver 对象
+     */
     private final ParamNameResolver paramNameResolver;
 
     public MethodSignature(Configuration configuration, Class<?> mapperInterface, Method method) {

@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Mapper注册表
  * @author Clinton Begin
  * @author Eduardo Macarron
  * @author Lasse Voss
@@ -58,12 +59,14 @@ public class MapperRegistry {
   }
 
   public <T> void addMapper(Class<T> type) {
+    // 判断，必须是接口。
     if (type.isInterface()) {
       if (hasMapper(type)) {
         throw new BindingException("Type " + type + " is already known to the MapperRegistry.");
       }
       boolean loadCompleted = false;
       try {
+        // 添加到 knownMappers 中
         knownMappers.put(type, new MapperProxyFactory<T>(type));
         // It's important that the type is added before the parser is run
         // otherwise the binding may automatically be attempted by the
@@ -93,6 +96,7 @@ public class MapperRegistry {
     ResolverUtil<Class<?>> resolverUtil = new ResolverUtil<>();
     resolverUtil.find(new ResolverUtil.IsA(superType), packageName);
     Set<Class<? extends Class<?>>> mapperSet = resolverUtil.getClasses();
+    // 遍历，添加到 knownMappers 中
     for (Class<?> mapperClass : mapperSet) {
       addMapper(mapperClass);
     }
